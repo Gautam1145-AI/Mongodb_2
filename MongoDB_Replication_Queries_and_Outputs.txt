@@ -1,0 +1,247 @@
+MONGODB REPLICATION - IMPLEMENTATION QUERIES AND OUTPUTS
+==========================================================
+
+1. REPLICA SET INITIALIZATION
+-----------------------------
+
+QUERY:
+rs.initiate({
+  _id: "rs0",
+  members: [
+    { _id: 0, host: "localhost:27017" },
+    { _id: 1, host: "localhost:27018" },
+    { _id: 2, host: "localhost:27019" }
+  ]
+})
+
+OUTPUT:
+{
+  ok: 1,
+  '$clusterTime': { ... },
+  operationTime: ...
+}
+
+
+QUERY:
+rs.status().members.map(m => ({
+  name: m.name,
+  state: m.stateStr
+}))
+
+OUTPUT:
+[
+  { name: 'localhost:27017', state: 'PRIMARY' },
+  { name: 'localhost:27018', state: 'SECONDARY' },
+  { name: 'localhost:27019', state: 'SECONDARY' }
+]
+
+
+2. PRIMARY WRITE AND SECONDARY READ
+-----------------------------------
+
+QUERY (run on the replica-set primary):
+use collegeDB
+
+db.replicationDemo.insertOne(
+  { student: "Aman", branch: "CSE", marks: 90 },
+  { writeConcern: { w: "majority", wtimeout: 5000 } }
+)
+
+OUTPUT:
+{
+  acknowledged: true,
+  insertedId: ObjectId('...')
+}
+
+
+QUERY (connect to a secondary, then run):
+db.getMongo().setReadPref("secondary")
+db.getSiblingDB("collegeDB").replicationDemo.find()
+
+OUTPUT:
+[
+  {
+    _id: ObjectId('...'),
+    student: 'Aman',
+    branch: 'CSE',
+    marks: 90
+  }
+]
+
+
+3. READ PREFERENCE
+------------------
+
+QUERY:
+db.getMongo().setReadPref("primary")
+db.getSiblingDB("collegeDB").replicationDemo.find()
+
+OUTPUT:
+[
+  { _id: ObjectId('...'), student: 'Aman', branch: 'CSE', marks: 90 }
+]
+
+
+QUERY:
+db.getMongo().setReadPref("primaryPreferred")
+db.getSiblingDB("collegeDB").replicationDemo.find()
+
+OUTPUT:
+[
+  { _id: ObjectId('...'), student: 'Aman', branch: 'CSE', marks: 90 }
+]
+
+
+QUERY:
+db.getMongo().setReadPref("secondary")
+db.getSiblingDB("collegeDB").replicationDemo.find()
+
+OUTPUT:
+[
+  { _id: ObjectId('...'), student: 'Aman', branch: 'CSE', marks: 90 }
+]
+
+
+QUERY:
+db.getMongo().setReadPref("secondaryPreferred")
+db.getSiblingDB("collegeDB").replicationDemo.find()
+
+OUTPUT:
+[
+  { _id: ObjectId('...'), student: 'Aman', branch: 'CSE', marks: 90 }
+]
+
+
+QUERY:
+db.getMongo().setReadPref("nearest")
+db.getSiblingDB("collegeDB").replicationDemo.find()
+
+OUTPUT:
+[
+  { _id: ObjectId('...'), student: 'Aman', branch: 'CSE', marks: 90 }
+]
+
+NOTE: ObjectId values are generated automatically and differ on each run.
+Read-preference results depend on replica-set health and available members.
+
+
+4. WRITE CONCERN
+----------------
+
+QUERY:
+db.getSiblingDB("collegeDB").replicationDemo.insertOne(
+  { student: "Priya", marks: 95 },
+  { writeConcern: { w: 1 } }
+)
+
+OUTPUT:
+{
+  acknowledged: true,
+  insertedId: ObjectId('...')
+}
+
+
+QUERY:
+db.getSiblingDB("collegeDB").replicationDemo.insertOne(
+  { student: "Rahul", marks: 88 },
+  { writeConcern: { w: "majority", wtimeout: 5000 } }
+)
+
+OUTPUT:
+{
+  acknowledged: true,
+  insertedId: ObjectId('...')
+}
+
+
+QUERY:
+db.getSiblingDB("collegeDB").replicationDemo.insertOne(
+  { student: "Neha", marks: 91 },
+  { writeConcern: { w: "majority", j: true, wtimeout: 5000 } }
+)
+
+OUTPUT:
+{
+  acknowledged: true,
+  insertedId: ObjectId('...')
+}
+
+
+QUERY:
+db.getSiblingDB("collegeDB").replicationDemo.find()
+
+OUTPUT:
+[
+  { student: 'Aman', branch: 'CSE', marks: 90, _id: ObjectId('...') },
+  { student: 'Priya', marks: 95, _id: ObjectId('...') },
+  { student: 'Rahul', marks: 88, _id: ObjectId('...') },
+  { student: 'Neha', marks: 91, _id: ObjectId('...') }
+]
+
+
+5. PRIMARY FAILURE AND ELECTION
+-------------------------------
+
+QUERY (before stopping the current primary):
+rs.status().members.map(m => ({
+  name: m.name,
+  state: m.stateStr
+}))
+
+OUTPUT:
+[
+  { name: 'localhost:27017', state: 'PRIMARY' },
+  { name: 'localhost:27018', state: 'SECONDARY' },
+  { name: 'localhost:27019', state: 'SECONDARY' }
+]
+
+ACTION:
+Stop the terminal process for the current PRIMARY using Control+C.
+Wait a few seconds. Connect to the remaining members, for example:
+
+mongosh "mongodb://localhost:27018,localhost:27019/?replicaSet=rs0"
+
+QUERY:
+rs.status().members.map(m => ({
+  name: m.name,
+  state: m.stateStr
+}))
+
+OUTPUT (example; the elected port can vary):
+[
+  { name: 'localhost:27018', state: 'PRIMARY' },
+  { name: 'localhost:27019', state: 'SECONDARY' }
+]
+
+
+QUERY (write after election):
+db.getSiblingDB("collegeDB").replicationDemo.insertOne(
+  { student: "Vikas", marks: 86 },
+  { writeConcern: { w: "majority", wtimeout: 5000 } }
+)
+
+OUTPUT:
+{
+  acknowledged: true,
+  insertedId: ObjectId('...')
+}
+
+
+6. FINAL STATUS
+---------------
+
+QUERY:
+rs.status().members.map(m => ({
+  name: m.name,
+  state: m.stateStr
+}))
+
+OUTPUT (example):
+[
+  { name: 'localhost:27017', state: 'SECONDARY' },
+  { name: 'localhost:27018', state: 'PRIMARY' },
+  { name: 'localhost:27019', state: 'SECONDARY' }
+]
+
+NOTE: Outputs are representative examples. ObjectIds, timestamps, elected
+primary, and status details can differ on your system.
