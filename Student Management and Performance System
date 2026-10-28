@@ -1,0 +1,313 @@
+Last login: Wed Oct 28 09:20:54 on ttys006
+Matching Java Virtual Machines (1):
+    25 (arm64) "Oracle Corporation" - "Java SE 25" /Library/Java/JavaVirtualMachines/jdk-25.jdk/Contents/Home
+(base) gautam_kumar@Mac ~ % mongosh "mongodb+srv://gautam.w5gnhat.mongodb.net/" --apiVersion 1 --username gautamprajapat5608_db_user --password Z925G2iQ8wYQuFM4
+Current Mongosh Log ID: 6aa7f89d85cc94235752e719
+Current Mongosh Log ID:	6ae1a2ee5e3a37cfde670236
+Connecting to:		mongodb+srv://<credentials>@gautam.w5gnhat.mongodb.net/?appName=mongosh+2.10.0
+Using MongoDB:		8.0.34 (API Version 1)
+Using Mongosh:		2.10.0
+mongosh 2.14.0 is available for download: https://www.mongodb.com/try/download/shell
+
+For mongosh info see: https://www.mongodb.com/docs/mongodb-shell/
+
+Atlas atlas-hlruvh-shard-0 [primary] test> use studentManagementDB
+switched to db studentManagementDB
+Atlas atlas-hlruvh-shard-0 [primary] studentManagementDB> db.students.insertMany([
+|   {
+|     studentId: 101,
+|     name: "Aman",
+|     course: "Computer Science",
+|     marks: 85
+|   },
+|   {
+|     studentId: 102,
+|     name: "Priya",
+|     course: "Computer Science",
+|     marks: 92
+|   },
+|   {
+|     studentId: 103,
+|     name: "Rahul",
+|     course: "Mathematics",
+|     marks: 78
+|   },
+|   {
+|     studentId: 104,
+|     name: "Neha",
+|     course: "Mathematics",
+|     marks: 88
+|   },
+|   {
+|     studentId: 105,
+|     name: "Vikas",
+|     course: "Physics",
+|     marks: 80
+|   }
+| ])
+{
+  acknowledged: true,
+  insertedIds: {
+    '0': ObjectId('6ae1a3035e3a37cfde670237'),
+    '1': ObjectId('6ae1a3035e3a37cfde670238'),
+    '2': ObjectId('6ae1a3035e3a37cfde670239'),
+    '3': ObjectId('6ae1a3035e3a37cfde67023a'),
+    '4': ObjectId('6ae1a3035e3a37cfde67023b')
+  }
+}
+Atlas atlas-hlruvh-shard-0 [primary] studentManagementDB> db.students.find()
+[
+  {
+    _id: ObjectId('6ae1a3035e3a37cfde670237'),
+    studentId: 101,
+    name: 'Aman',
+    course: 'Computer Science',
+    marks: 85
+  },
+  {
+    _id: ObjectId('6ae1a3035e3a37cfde670238'),
+    studentId: 102,
+    name: 'Priya',
+    course: 'Computer Science',
+    marks: 92
+  },
+  {
+    _id: ObjectId('6ae1a3035e3a37cfde670239'),
+    studentId: 103,
+    name: 'Rahul',
+    course: 'Mathematics',
+    marks: 78
+  },
+  {
+    _id: ObjectId('6ae1a3035e3a37cfde67023a'),
+    studentId: 104,
+    name: 'Neha',
+    course: 'Mathematics',
+    marks: 88
+  },
+  {
+    _id: ObjectId('6ae1a3035e3a37cfde67023b'),
+    studentId: 105,
+    name: 'Vikas',
+    course: 'Physics',
+    marks: 80
+  }
+]
+Atlas atlas-hlruvh-shard-0 [primary] studentManagementDB> db.courses.insertMany([
+|   {
+|     courseId: "CS101",
+|     courseName: "Computer Science",
+|     instructor: "Mr. Sharma",
+|     duration: "6 Months"
+|   },
+|   {
+|     courseId: "MA101",
+|     courseName: "Mathematics",
+|     instructor: "Ms. Verma",
+|     duration: "4 Months"
+|   },
+|   {
+|     courseId: "PH101",
+|     courseName: "Physics",
+|     instructor: "Mr. Gupta",
+|     duration: "5 Months"
+|   }
+| ])
+{
+  acknowledged: true,
+  insertedIds: {
+    '0': ObjectId('6ae1a31e5e3a37cfde67023c'),
+    '1': ObjectId('6ae1a31e5e3a37cfde67023d'),
+    '2': ObjectId('6ae1a31e5e3a37cfde67023e')
+  }
+}
+Atlas atlas-hlruvh-shard-0 [primary] studentManagementDB> db.courses.find()
+[
+  {
+    _id: ObjectId('6ae1a31e5e3a37cfde67023c'),
+    courseId: 'CS101',
+    courseName: 'Computer Science',
+    instructor: 'Mr. Sharma',
+    duration: '6 Months'
+  },
+  {
+    _id: ObjectId('6ae1a31e5e3a37cfde67023d'),
+    courseId: 'MA101',
+    courseName: 'Mathematics',
+    instructor: 'Ms. Verma',
+    duration: '4 Months'
+  },
+  {
+    _id: ObjectId('6ae1a31e5e3a37cfde67023e'),
+    courseId: 'PH101',
+    courseName: 'Physics',
+    instructor: 'Mr. Gupta',
+    duration: '5 Months'
+  }
+]
+Atlas atlas-hlruvh-shard-0 [primary] studentManagementDB> db.students.updateOne(
+|   { studentId: 101 },
+|   { $set: { marks: 90 } }
+| )
+{
+  acknowledged: true,
+  insertedId: null,
+  matchedCount: 1,
+  modifiedCount: 1,
+  upsertedCount: 0
+}
+Atlas atlas-hlruvh-shard-0 [primary] studentManagementDB> db.students.find(
+|   { studentId: 101 }
+| )
+[
+  {
+    _id: ObjectId('6ae1a3035e3a37cfde670237'),
+    studentId: 101,
+    name: 'Aman',
+    course: 'Computer Science',
+    marks: 90
+  }
+]
+Atlas atlas-hlruvh-shard-0 [primary] studentManagementDB> db.courses.createIndex({ courseName: 1 })
+courseName_1
+Atlas atlas-hlruvh-shard-0 [primary] studentManagementDB> db.courses.getIndexes()
+[
+  { v: 2, key: { _id: 1 }, name: '_id_' },
+  { v: 2, key: { courseName: 1 }, name: 'courseName_1' }
+]
+Atlas atlas-hlruvh-shard-0 [primary] studentManagementDB> db.courses.find({
+|   courseName: "Computer Science"
+| }).explain("executionStats")
+{
+  explainVersion: '1',
+  queryPlanner: {
+    namespace: 'studentManagementDB.courses',
+    parsedQuery: { courseName: { '$eq': 'Computer Science' } },
+    indexFilterSet: false,
+    queryHash: 'FC7860A0',
+    planCacheShapeHash: 'FC7860A0',
+    planCacheKey: '03A8E5A2',
+    optimizationTimeMillis: 0,
+    maxIndexedOrSolutionsReached: false,
+    maxIndexedAndSolutionsReached: false,
+    maxScansToExplodeReached: false,
+    prunedSimilarIndexes: false,
+    winningPlan: {
+      isCached: false,
+      stage: 'FETCH',
+      inputStage: {
+        stage: 'IXSCAN',
+        keyPattern: { courseName: 1 },
+        indexName: 'courseName_1',
+        isMultiKey: false,
+        multiKeyPaths: { courseName: [] },
+        isUnique: false,
+        isSparse: false,
+        isPartial: false,
+        indexVersion: 2,
+        direction: 'forward',
+        indexBounds: { courseName: [ '["Computer Science", "Computer Science"]' ] }
+      }
+    },
+    rejectedPlans: []
+  },
+  executionStats: {
+    executionSuccess: true,
+    nReturned: 1,
+    executionTimeMillis: 1,
+    totalKeysExamined: 1,
+    totalDocsExamined: 1,
+    executionStages: {
+      isCached: false,
+      stage: 'FETCH',
+      nReturned: 1,
+      executionTimeMillisEstimate: 0,
+      works: 2,
+      advanced: 1,
+      needTime: 0,
+      needYield: 0,
+      saveState: 0,
+      restoreState: 0,
+      isEOF: 1,
+      docsExamined: 1,
+      alreadyHasObj: 0,
+      inputStage: {
+        stage: 'IXSCAN',
+        nReturned: 1,
+        executionTimeMillisEstimate: 0,
+        works: 2,
+        advanced: 1,
+        needTime: 0,
+        needYield: 0,
+        saveState: 0,
+        restoreState: 0,
+        isEOF: 1,
+        keyPattern: { courseName: 1 },
+        indexName: 'courseName_1',
+        isMultiKey: false,
+        multiKeyPaths: { courseName: [] },
+        isUnique: false,
+        isSparse: false,
+        isPartial: false,
+        indexVersion: 2,
+        direction: 'forward',
+        indexBounds: { courseName: [ '["Computer Science", "Computer Science"]' ] },
+        keysExamined: 1,
+        seeks: 1,
+        dupsTested: 0,
+        dupsDropped: 0
+      }
+    }
+  },
+  queryShapeHash: 'C92398F208AA46C20E8D7FFB828DCFFCF3B35597F46D0EE992104EEBADA7730A',
+  command: {
+    find: 'courses',
+    filter: { courseName: 'Computer Science' },
+    '$db': 'studentManagementDB'
+  },
+  serverInfo: {
+    host: 'ac-magamyo-shard-00-01.w5gnhat.mongodb.net',
+    port: 27017,
+    version: '8.0.34',
+    gitVersion: '51db4515a6597aedcf6188ee4e48a27e65b065ae'
+  },
+  serverParameters: {
+    internalQueryFacetBufferSizeBytes: 104857600,
+    internalQueryFacetMaxOutputDocSizeBytes: 104857600,
+    internalLookupStageIntermediateDocumentMaxSizeBytes: 16793600,
+    internalDocumentSourceGroupMaxMemoryBytes: 104857600,
+    internalQueryMaxBlockingSortMemoryUsageBytes: 33554432,
+    internalQueryProhibitBlockingMergeOnMongoS: 0,
+    internalQueryMaxAddToSetBytes: 104857600,
+    internalDocumentSourceSetWindowFieldsMaxMemoryBytes: 104857600,
+    internalQueryFrameworkControl: 'trySbeRestricted',
+    internalQueryPlannerIgnoreIndexWithCollationForRegex: 1
+  },
+  ok: 1,
+  '$clusterTime': {
+    clusterTime: Timestamp({ t: 1793172333, i: 1 }),
+    signature: {
+      hash: Binary.createFromBase64('9jQTQejH6aIUxF8BL0g9sd592Bw=', 0),
+      keyId: Long('7652370014699257859')
+    }
+  },
+  operationTime: Timestamp({ t: 1793172333, i: 1 })
+}
+Atlas atlas-hlruvh-shard-0 [primary] studentManagementDB> db.students.aggregate([
+|   {
+|     $group: {
+|       _id: "$course",
+|       totalStudents: { $sum: 1 },
+|       averageMarks: { $avg: "$marks" }
+|     }
+|   },
+|   {
+|     $sort: { _id: 1 }
+|   }
+| ])
+[
+  { _id: 'Computer Science', totalStudents: 2, averageMarks: 91 },
+  { _id: 'Mathematics', totalStudents: 2, averageMarks: 83 },
+  { _id: 'Physics', totalStudents: 1, averageMarks: 80 }
+]
+Atlas atlas-hlruvh-shard-0 [primary] studentManagementDB> 
