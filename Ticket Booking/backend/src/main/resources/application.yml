@@ -1,0 +1,29 @@
+server:
+  port: ${PORT:8080}
+
+spring:
+  application:
+    name: event-ticket-booking-backend
+  data:
+    mongodb:
+      uri: ${MONGODB_URI:mongodb://127.0.0.1:27017/ticket_booking?replicaSet=rs0}
+      database: ${MONGODB_DATABASE:ticket_booking}
+      auto-index-creation: true
+
+app:
+  jwt:
+    secret: ${JWT_SECRET:4c8b2f91a03e456d8c9b2f91a03e456d8c9b2f91a03e456d8c9b2f91a03e456d}
+    expiration-ms: 86400000 # 24 hours
+  cors:
+    allowed-origins: ${CLIENT_ORIGIN:http://localhost:5173,http://localhost:3000,http://127.0.0.1:5173,http://127.0.0.1:3000}
+  hold:
+    duration-minutes: 10
+  cancellation:
+    cutoff-hours-before-event: 2
+
+logging:
+  level:
+    root: INFO
+    com.ticketbooking: DEBUG
+    org.springframework.data.mongodb.core.MongoTemplate: DEBUG
+

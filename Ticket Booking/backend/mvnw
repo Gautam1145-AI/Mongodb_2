@@ -1,0 +1,14 @@
+#!/bin/sh
+# Portable Maven wrapper script for Ticket Booking System
+if command -v mvn >/dev/null 2>&1; then
+    exec mvn "$@"
+elif [ -x "/tmp/apache-maven-3.9.6/bin/mvn" ]; then
+    exec /tmp/apache-maven-3.9.6/bin/mvn "$@"
+elif [ -x "$HOME/.maven/bin/mvn" ]; then
+    exec "$HOME/.maven/bin/mvn" "$@"
+else
+    echo "Error: Maven not found on PATH or in standard locations."
+    echo "Please install Maven or ensure 'mvn' is available."
+    exit 1
+fi
+
