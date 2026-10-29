@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}MetroHealth Enterprise | Clinical Operations & EHR Command Center{% endblock %}</title>
+  <meta name="description" content="Tier-1 Enterprise Hospital Management System and Electronic Health Records Platform.">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🏥</text></svg>">
+  <!-- Chart.js for High-End Enterprise Analytics -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+
+  <div class="app-container">
+    
+    <!-- =========================================================
+         ENTERPRISE EXECUTIVE SIDEBAR
+         ========================================================= -->
+    <aside class="enterprise-sidebar">
+      <!-- Sidebar Header -->
+      <div class="sidebar-header">
+        <a href="{{ url_for('dashboard') }}" class="brand-wrapper">
+          <div class="brand-logo-mark">🏥</div>
+          <div>
+            <div class="brand-title">MetroHealth</div>
+            <div class="brand-edition">Enterprise Clinical</div>
+          </div>
+        </a>
+      </div>
+
+      <!-- Navigation Links -->
+      <div class="sidebar-nav-section">
+        <div class="nav-section-label">Clinical Core</div>
+        
+        <a href="{{ url_for('dashboard') }}" class="nav-link-item {% if active_page == 'dashboard' %}active{% endif %}" id="nav-dashboard">
+          <div class="nav-link-left">
+            <span class="nav-icon">📊</span>
+            <span>Dashboard</span>
+          </div>
+          <span class="nav-kbd-badge">Ctrl+D</span>
+        </a>
+
+        <a href="{{ url_for('patients_page') }}" class="nav-link-item {% if active_page == 'patients' %}active{% endif %}" id="nav-patients">
+          <div class="nav-link-left">
+            <span class="nav-icon">👥</span>
+            <span>Patient Registry</span>
+          </div>
+          <span class="nav-kbd-badge">Ctrl+P</span>
+        </a>
+
+        <a href="{{ url_for('doctors_page') }}" class="nav-link-item {% if active_page == 'doctors' %}active{% endif %}" id="nav-doctors">
+          <div class="nav-link-left">
+            <span class="nav-icon">🩺</span>
+            <span>Medical Specialists</span>
+          </div>
+        </a>
+
+        <a href="{{ url_for('appointments_page') }}" class="nav-link-item {% if active_page == 'appointments' %}active{% endif %}" id="nav-appointments">
+          <div class="nav-link-left">
+            <span class="nav-icon">📅</span>
+            <span>Appointments</span>
+          </div>
+          <span class="nav-kbd-badge">Ctrl+A</span>
+        </a>
+
+        <div class="nav-section-label" style="margin-top: 0.8rem;">Inpatient & Operations</div>
+
+        <a href="{{ url_for('medical_records_page') }}" class="nav-link-item {% if active_page == 'medical-records' %}active{% endif %}" id="nav-records">
+          <div class="nav-link-left">
+            <span class="nav-icon">📋</span>
+            <span>EHR Diagnoses & Rx</span>
+          </div>
+        </a>
+
+        <a href="{{ url_for('rooms_page') }}" class="nav-link-item {% if active_page == 'rooms' %}active{% endif %}" id="nav-rooms">
+          <div class="nav-link-left">
+            <span class="nav-icon">🛏️</span>
+            <span>Ward & Bed Allocation</span>
+          </div>
+        </a>
+
+        <a href="{{ url_for('billing_page') }}" class="nav-link-item {% if active_page == 'billing' %}active{% endif %}" id="nav-billing">
+          <div class="nav-link-left">
+            <span class="nav-icon">💳</span>
+            <span>Billing & Invoices</span>
+          </div>
+        </a>
+      </div>
+
+      <!-- Sidebar Footer Telemetry -->
+      <div class="sidebar-footer">
+        <div class="telemetry-card">
+          <div class="telemetry-row">
+            <span style="color: var(--text-tertiary); font-weight: 600;">System Status:</span>
+            <div style="display: flex; align-items: center; gap: 0.35rem;">
+              <div class="telemetry-dot"></div>
+              <span style="color: var(--status-emerald); font-weight: 700;">Operational</span>
+            </div>
+          </div>
+          <div class="telemetry-row" style="color: var(--text-tertiary);">
+            <span>Facility:</span>
+            <span style="color: var(--text-secondary); font-weight: 600;">Metro Central</span>
+          </div>
+          <div class="telemetry-row" style="color: var(--text-tertiary);">
+            <span>Compliance:</span>
+            <span style="color: #2563eb; font-weight: 600;">HIPAA / NABH</span>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- =========================================================
+         MAIN APPLICATION VIEWPORT
+         ========================================================= -->
+    <div class="app-viewport">
+      
+      <!-- Topbar Command Center -->
+      <header class="topbar-command-center">
+        <!-- Command Palette Trigger Search Bar -->
+        <div class="cmd-palette-trigger" onclick="openCommandPalette()">
+          <span>🔍</span>
+          <span>Quick search patients, doctors, records...</span>
+          <span class="cmd-kbd-shortcut">Ctrl + K</span>
+        </div>
+
+        <!-- Topbar Right Controls -->
+        <div class="topbar-actions">
+          <!-- Audio Haptics Toggle -->
+          <button class="action-icon-btn" onclick="toggleSound()" title="Toggle Audio Feedback">
+            <span id="soundToggleIcon">🔊</span>
+          </button>
+
+          <!-- Notification Bell -->
+          <div style="position: relative;">
+            <button class="action-icon-btn" id="notifBellBtn" onclick="toggleNotificationFlyout()" title="Clinical Notifications">
+              <span>🔔</span>
+              <div class="notification-badge-dot"></div>
+            </button>
+
+            <!-- Notification Flyout -->
+            <div class="notification-flyout" id="notificationFlyout">
+              <div class="notif-header">
+                <div style="font-weight: 700; font-size: 0.88rem; color: #0f172a;">Clinical Operations Feed</div>
+                <span class="kpi-badge">3 New</span>
+              </div>
+              <div class="notif-list">
+                <div class="notif-item unread">
+                  <span style="font-size: 1.1rem;">⚠️</span>
+                  <div>
+                    <div style="font-size: 0.82rem; font-weight: 600; color: #0f172a;">ICU Ward Census Notice</div>
+                    <div style="font-size: 0.74rem; color: var(--text-secondary);">Room R101 reached 50% capacity. 2 beds available.</div>
+                  </div>
+                </div>
+                <div class="notif-item unread">
+                  <span style="font-size: 1.1rem;">🩺</span>
+                  <div>
+                    <div style="font-size: 0.82rem; font-weight: 600; color: #0f172a;">Dr. Sunita Rao (Neurology)</div>
+                    <div style="font-size: 0.74rem; color: var(--text-secondary);">Consultation A102 scheduled with Priya Patel.</div>
+                  </div>
+                </div>
+                <div class="notif-item">
+                  <span style="font-size: 1.1rem;">💰</span>
+                  <div>
+                    <div style="font-size: 0.82rem; font-weight: 600; color: #0f172a;">Patient Settlement Completed</div>
+                    <div style="font-size: 0.74rem; color: var(--text-secondary);">Total ₹9,300 collected across paid invoices.</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Campus Pill Badge -->
+          <div class="cluster-pill-badge" title="Facility Status">
+            <div class="telemetry-dot"></div>
+            <span>Metro Central Campus</span>
+          </div>
+
+          <!-- User Role Avatar Profile -->
+          <div class="role-profile-pill">
+            <div class="role-avatar">DR</div>
+            <div class="role-text-meta">
+              <span class="role-name">Dr. Administrator</span>
+              <span class="role-title">Chief of Medicine</span>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <!-- Workspace Page Container -->
+      <main class="workspace-content">
+        {% block content %}{% endblock %}
+      </main>
+
+    </div>
+  </div>
+
+  <!-- =========================================================
+       DYNAMIC FLOATING ACTION SPEED-DIAL (GESTURE FAB)
+       ========================================================= -->
+  <div class="floating-speed-dial">
+    <div class="fab-menu-options" id="fabMenuOptions">
+      <div class="fab-action-item" onclick="openModal('newPatientModal')">
+        <span>👤</span>
+        <span>Register Patient</span>
+      </div>
+      <div class="fab-action-item" onclick="openModal('bookAppointmentModal')">
+        <span>📅</span>
+        <span>Book Appointment</span>
+      </div>
+      <div class="fab-action-item" onclick="openModal('newBillModal')">
+        <span>💳</span>
+        <span>Generate Invoice</span>
+      </div>
+      <div class="fab-action-item" onclick="openModal('allocateRoomModal')">
+        <span>🛏️</span>
+        <span>Allocate Bed</span>
+      </div>
+    </div>
+    <button class="fab-main-btn" id="fabMainBtn" onclick="toggleSpeedDial()" title="Quick Actions Speed-Dial">
+      <span>＋</span>
+    </button>
+  </div>
+
+  <!-- =========================================================
+       COMMAND PALETTE SPOTLIGHT MODAL (CTRL+K / ⌘K)
+       ========================================================= -->
+  <div class="cmd-palette-backdrop" id="cmdPaletteBackdrop" onclick="if(event.target === this) closeCommandPalette()">
+    <div class="cmd-palette-box">
+      <div class="cmd-input-bar">
+        <span style="font-size: 1.2rem; color: #2563eb;">🔍</span>
+        <input type="text" id="cmdPaletteInput" class="cmd-input" placeholder="Search patients, doctors, wards, or actions..." oninput="renderCommandResults(this.value)">
+        <span class="cmd-kbd-shortcut">ESC</span>
+      </div>
+      <div class="cmd-results-list" id="cmdResultsList"></div>
+      <div class="cmd-footer-bar">
+        <div>
+          <span>Navigate with <kbd>↑</kbd> <kbd>↓</kbd></span> • 
+          <span>Select with <kbd>↵</kbd></span>
+        </div>
+        <span style="color: #2563eb; font-weight: 600;">MetroHealth Clinical Hub</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div id="toast-container"></div>
+
+  <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+  {% block scripts %}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,177 @@
+{% extends "base.html" %}
+
+{% block title %}MongoDB Live Query & Aggregation Console | HospitalDB Enterprise{% endblock %}
+
+{% block content %}
+<div class="view-header">
+  <div class="view-headline">
+    <div style="display: flex; align-items: center; gap: 0.65rem; margin-bottom: 0.2rem;">
+      <span class="status-pill status-cyan">⚡ Developer Laboratory</span>
+      <span style="font-size: 0.78rem; color: var(--text-tertiary); font-family: 'JetBrains Mono', monospace;">Direct BSON Execution Engine</span>
+    </div>
+    <h2 class="view-title">⚡ MongoDB Live Query & Aggregation Console</h2>
+    <p class="view-subtitle">Execute, inspect, and benchmark MongoDB CRUD operations, multi-stage aggregation pipelines, and relational $lookup joins live against the database cluster.</p>
+  </div>
+  <div class="view-controls">
+    <button class="btn-enterprise btn-ghost-glass" onclick="resetSeedData()">
+      🔄 Reset Sample Dataset
+    </button>
+  </div>
+</div>
+
+<div class="query-grid">
+  
+  <!-- Left Side: Query Selector List -->
+  <div class="query-list">
+    <div style="font-size: 0.72rem; text-transform: uppercase; color: var(--text-tertiary); font-weight: 700; letter-spacing: 0.08em; padding: 0.2rem 0.4rem;">
+      Core DBMS Queries:
+    </div>
+
+    <!-- Query 1 -->
+    <div class="query-card active" id="query-card-q1" onclick="selectQuery('q1')">
+      <div class="query-card-header">
+        <span class="query-num">Query 1</span>
+        <span class="status-pill status-cyan" style="padding: 0.15rem 0.55rem; font-size: 0.68rem;">FIND</span>
+      </div>
+      <div class="query-card-title">Display All Patients</div>
+      <div class="query-desc">db.patients.find()</div>
+    </div>
+
+    <!-- Query 2 -->
+    <div class="query-card" id="query-card-q2" onclick="selectQuery('q2')">
+      <div class="query-card-header">
+        <span class="query-num">Query 2</span>
+        <span class="status-pill status-cyan" style="padding: 0.15rem 0.55rem; font-size: 0.68rem;">FILTER</span>
+      </div>
+      <div class="query-card-title">Find Patient by Name</div>
+      <div class="query-desc">db.patients.find({ name: ... })</div>
+    </div>
+
+    <!-- Query 3 -->
+    <div class="query-card" id="query-card-q3" onclick="selectQuery('q3')">
+      <div class="query-card-header">
+        <span class="query-num">Query 3</span>
+        <span class="status-pill status-cyan" style="padding: 0.15rem 0.55rem; font-size: 0.68rem;">FILTER</span>
+      </div>
+      <div class="query-card-title">Doctors by Specialization</div>
+      <div class="query-desc">db.doctors.find({ specialization: ... })</div>
+    </div>
+
+    <!-- Query 4 -->
+    <div class="query-card" id="query-card-q4" onclick="selectQuery('q4')">
+      <div class="query-card-header">
+        <span class="query-num">Query 4</span>
+        <span class="status-pill status-amber" style="padding: 0.15rem 0.55rem; font-size: 0.68rem;">UPDATE</span>
+      </div>
+      <div class="query-card-title">Update Patient Details</div>
+      <div class="query-desc">db.patients.updateOne({ ... }, { $set })</div>
+    </div>
+
+    <!-- Query 5 -->
+    <div class="query-card" id="query-card-q5" onclick="selectQuery('q5')">
+      <div class="query-card-header">
+        <span class="query-num">Query 5</span>
+        <span class="status-pill status-rose" style="padding: 0.15rem 0.55rem; font-size: 0.68rem;">DELETE</span>
+      </div>
+      <div class="query-card-title">Delete a Patient Record</div>
+      <div class="query-desc">db.patients.deleteOne({ ... })</div>
+    </div>
+
+    <!-- Query 6 -->
+    <div class="query-card" id="query-card-q6" onclick="selectQuery('q6')">
+      <div class="query-card-header">
+        <span class="query-num">Query 6</span>
+        <span class="status-pill status-violet" style="padding: 0.15rem 0.55rem; font-size: 0.68rem;">COUNT</span>
+      </div>
+      <div class="query-card-title">Count Total Patients</div>
+      <div class="query-desc">db.patients.countDocuments()</div>
+    </div>
+
+    <div style="font-size: 0.72rem; text-transform: uppercase; color: var(--text-tertiary); font-weight: 700; letter-spacing: 0.08em; padding: 0.8rem 0.4rem 0.2rem;">
+      Aggregation Pipelines:
+    </div>
+
+    <!-- Query 7 -->
+    <div class="query-card" id="query-card-q7" onclick="selectQuery('q7')">
+      <div class="query-card-header">
+        <span class="query-num">Query 7</span>
+        <span class="status-pill status-violet" style="padding: 0.15rem 0.55rem; font-size: 0.68rem;">$GROUP</span>
+      </div>
+      <div class="query-card-title">Count Doctors by Specialty</div>
+      <div class="query-desc">db.doctors.aggregate([ { $group } ])</div>
+    </div>
+
+    <!-- Query 8 -->
+    <div class="query-card" id="query-card-q8" onclick="selectQuery('q8')">
+      <div class="query-card-header">
+        <span class="query-num">Query 8</span>
+        <span class="status-pill status-emerald" style="padding: 0.15rem 0.55rem; font-size: 0.68rem;">$LOOKUP</span>
+      </div>
+      <div class="query-card-title">Appointments with Relational Joins</div>
+      <div class="query-desc">db.appointments.aggregate([ $lookup, $unwind ])</div>
+    </div>
+
+    <!-- Revenue Pipeline -->
+    <div class="query-card" id="query-card-q_revenue" onclick="selectQuery('q_revenue')">
+      <div class="query-card-header">
+        <span class="query-num">Revenue</span>
+        <span class="status-pill status-emerald" style="padding: 0.15rem 0.55rem; font-size: 0.68rem;">$MATCH & $SUM</span>
+      </div>
+      <div class="query-card-title">Calculate Total Revenue</div>
+      <div class="query-desc">db.billing.aggregate([ $match, $group ])</div>
+    </div>
+  </div>
+
+  <!-- Right Side: Query Inspector & Execution Playground -->
+  <div>
+    <div class="enterprise-card" style="margin-bottom: 1.4rem;">
+      <div class="card-topbar">
+        <div>
+          <h3 id="queryDetailTitle" class="card-heading">Query 1: Display All Patients</h3>
+          <p id="queryDetailDesc" style="font-size: 0.82rem; color: var(--text-secondary); margin-top: 0.25rem;">
+            Retrieves all documents stored inside the patients collection.
+          </p>
+        </div>
+        <button class="btn-enterprise btn-ghost-glass btn-xs" onclick="copyQueryCode()" title="Copy MongoDB Shell Command">
+          📋 Copy Syntax
+        </button>
+      </div>
+
+      <!-- Syntax Box -->
+      <div style="font-size: 0.72rem; text-transform: uppercase; color: var(--text-tertiary); font-weight: 700; margin-bottom: 0.45rem; letter-spacing: 0.05em;">
+        MongoDB BSON Query / Pipeline Syntax:
+      </div>
+      <div class="code-viewer" id="queryCodeViewer">db.patients.find()</div>
+
+      <!-- Dynamic Param Container if applicable -->
+      <div id="queryParamContainer" style="display: none; margin-bottom: 1.25rem;"></div>
+
+      <!-- Execution Status Bar -->
+      <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.85rem; padding-top: 0.65rem; border-top: var(--border-hairline);">
+        <div id="queryExecutionMeta" style="font-size: 0.82rem; color: var(--text-secondary); font-family: 'JetBrains Mono', monospace;">
+          Engine ready
+        </div>
+        <button class="btn-enterprise btn-primary-glow" id="runQueryBtn" onclick="runCurrentQuery()">
+          ▶ Execute Pipeline
+        </button>
+      </div>
+    </div>
+
+    <!-- Output Terminal -->
+    <div class="enterprise-card" style="margin-bottom: 0;">
+      <div class="card-topbar">
+        <div class="card-title-group">
+          <span style="font-size: 1.25rem;">🖥️</span>
+          <div>
+            <h3 class="card-heading">MongoDB BSON / JSON Response Stream</h3>
+            <p style="font-size: 0.76rem; color: var(--text-secondary);">Real-time stream from database engine</p>
+          </div>
+        </div>
+        <span class="status-pill status-cyan">Formatted JSON</span>
+      </div>
+      <pre class="json-output" id="queryResultOutput">// Click "Execute Pipeline" above to inspect real MongoDB response</pre>
+    </div>
+  </div>
+
+</div>
+{% endblock %}

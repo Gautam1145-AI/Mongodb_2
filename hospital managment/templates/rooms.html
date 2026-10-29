@@ -1,0 +1,128 @@
+{% extends "base.html" %}
+
+{% block title %}Ward & Bed Management | MetroHealth Enterprise{% endblock %}
+
+{% block content %}
+<div class="view-header">
+  <div class="view-headline">
+    <div style="display: flex; align-items: center; gap: 0.65rem; margin-bottom: 0.2rem;">
+      <span class="status-pill status-cyan">● Inpatient Census</span>
+      <span style="font-size: 0.78rem; color: var(--text-tertiary);">Ward Capacity & Occupancy Tracking</span>
+    </div>
+    <h2 class="view-title">🛏️ Hospital Ward & Bed Allocation</h2>
+    <p class="view-subtitle">Tracks clinical ward capacity, real-time bed allocation gauges, and daily room tariff rates.</p>
+  </div>
+  <div class="view-controls">
+    <button class="btn-enterprise btn-primary-glow" onclick="openModal('allocateRoomModal')" id="btn-allocate-room">
+      ➕ Allocate Bed to Patient
+    </button>
+  </div>
+</div>
+
+<!-- Room Grid -->
+<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 1.5rem;">
+  {% for r in rooms %}
+  <div class="enterprise-card" style="margin-bottom: 0;">
+    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem;">
+      <div>
+        <div style="display: flex; align-items: center; gap: 0.5rem;">
+          <h3 style="font-size: 1.3rem; font-weight: 800; color: #0f172a;">Room {{ r.room_number }}</h3>
+          <span class="status-pill status-violet">Floor {{ r.floor }}</span>
+        </div>
+        <div style="font-size: 0.84rem; color: #2563eb; font-weight: 700; margin-top: 0.2rem;">{{ r.room_type }}</div>
+      </div>
+      <span class="status-pill {{ 'status-emerald' if r.status == 'Available' else 'status-rose' }}">
+        {{ r.status }}
+      </span>
+    </div>
+
+    <!-- Bed Occupancy Gauge -->
+    <div style="margin-bottom: 1.25rem; background: #f8fafc; padding: 0.95rem; border-radius: var(--r-sm); border: var(--border-hairline);">
+      <div style="display: flex; justify-content: space-between; font-size: 0.82rem; margin-bottom: 0.45rem;">
+        <span style="color: var(--text-secondary);">Capacity:</span>
+        <strong style="color: #0f172a;">{{ r.occupied_beds }} / {{ r.total_beds }} Beds Occupied</strong>
+      </div>
+      <div style="height: 8px; background: #e2e8f0; border-radius: 99px; overflow: hidden;">
+        <div style="width: {{ (r.occupied_beds / r.total_beds * 100) | round }}%; height: 100%; background: linear-gradient(90deg, #2563eb, #e11d48); border-radius: 99px;"></div>
+      </div>
+      <div style="display: flex; justify-content: space-between; font-size: 0.78rem; color: var(--text-tertiary); margin-top: 0.65rem;">
+        <span>Tariff: <strong style="color: var(--status-emerald); font-family: 'Outfit', sans-serif;">₹{{ "{:,.0f}".format(r.charge_per_day) }}/day</strong></span>
+        <span>{{ r.total_beds - r.occupied_beds }} Bed(s) Free</span>
+      </div>
+    </div>
+
+    <!-- Allocated Patients -->
+    <div style="margin-bottom: 1.25rem;">
+      <div style="font-size: 0.74rem; text-transform: uppercase; color: var(--text-tertiary); font-weight: 700; letter-spacing: 0.05em; margin-bottom: 0.5rem;">
+        Admitted Inpatients:
+      </div>
+      {% if r.allocated_patients %}
+        <div style="display: flex; flex-direction: column; gap: 0.45rem;">
+          {% for pid in r.allocated_patients %}
+          <div style="display: flex; justify-content: space-between; align-items: center; background: #ffffff; border: 1px solid #e2e8f0; padding: 0.5rem 0.8rem; border-radius: var(--r-sm); font-size: 0.84rem;">
+            <a href="{{ url_for('patient_history_page', patient_id=pid) }}" style="color: #0f172a; text-decoration: none; font-weight: 700;">
+              👤 Patient {{ pid }}
+            </a>
+            <button class="btn-enterprise btn-danger-glass btn-xs" onclick="dischargePatient('{{ r.room_number }}', '{{ pid }}')">
+              Discharge
+            </button>
+          </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <div style="font-size: 0.8rem; color: var(--text-tertiary); font-style: italic;">No patients currently allocated to this ward.</div>
+      {% endif %}
+    </div>
+
+    <!-- Room Features -->
+    {% if r.features %}
+    <div style="display: flex; gap: 0.35rem; flex-wrap: wrap;">
+      {% for f in r.features %}
+        <span style="font-size: 0.7rem; background: #f1f5f9; color: var(--text-secondary); padding: 0.2rem 0.55rem; border-radius: var(--r-xs); border: 1px solid #e2e8f0;">
+          ✓ {{ f }}
+        </span>
+      {% endfor %}
+    </div>
+    {% endif %}
+  </div>
+  {% endfor %}
+</div>
+
+<!-- Allocate Room Modal -->
+<div class="modal-overlay" id="allocateRoomModal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h3 class="modal-title">🛏️ Allocate Bed to Inpatient</h3>
+      <button class="modal-close" onclick="closeModal('allocateRoomModal')">&times;</button>
+    </div>
+    <form onsubmit="handleAllocateRoom(event)">
+      <div class="form-group">
+        <label>Select Available Ward / Room *:</label>
+        <select name="room_number" class="form-control" required>
+          <option value="">-- Choose Ward --</option>
+          {% for r in rooms %}
+          {% if r.status == 'Available' %}
+          <option value="{{ r.room_number }}">Room {{ r.room_number }} - {{ r.room_type }} ({{ r.total_beds - r.occupied_beds }} bed(s) free - ₹{{ r.charge_per_day }}/day)</option>
+          {% endif %}
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label>Select Admitted Patient *:</label>
+        <select name="patient_id" class="form-control" required>
+          <option value="">-- Choose Patient --</option>
+          {% for p in patients %}
+          <option value="{{ p.patient_id }}">{{ p.patient_id }} - {{ p.name }} ({{ p.blood_group }})</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div style="display: flex; justify-content: flex-end; gap: 0.75rem; margin-top: 1.5rem;">
+        <button type="button" class="btn-enterprise btn-ghost-glass" onclick="closeModal('allocateRoomModal')">Cancel</button>
+        <button type="submit" class="btn-enterprise btn-primary-glow">Confirm Bed Allocation</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

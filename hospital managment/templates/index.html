@@ -1,0 +1,329 @@
+{% extends "base.html" %}
+
+{% block title %}Executive Clinical Command Center | MetroHealth Enterprise{% endblock %}
+
+{% block content %}
+<!-- Executive View Header -->
+<div class="view-header">
+  <div class="view-headline">
+    <div style="display: flex; align-items: center; gap: 0.65rem; margin-bottom: 0.2rem;">
+      <span class="status-pill status-emerald">● Live Clinical Operations</span>
+      <span style="font-size: 0.78rem; color: var(--text-tertiary);">Metro Central Campus • Census Active</span>
+    </div>
+    <h2 class="view-title">Executive Clinical Command Center</h2>
+    <p class="view-subtitle">Real-time hospital intelligence, patient census tracking, and departmental analytics.</p>
+  </div>
+  <div class="view-controls">
+    <button class="btn-enterprise btn-ghost-glass" onclick="openCommandPalette()">
+      <span>⚡ Quick Actions</span>
+      <span class="nav-kbd-badge">Ctrl+K</span>
+    </button>
+    <button class="btn-enterprise btn-primary-glow" onclick="openModal('newPatientModal')">
+      <span>➕ Register Patient</span>
+    </button>
+  </div>
+</div>
+
+<!-- High-Impact KPI Stats Grid -->
+<div class="executive-kpi-grid">
+  <!-- KPI 1: Total Patients -->
+  <div class="kpi-card" style="--kpi-accent: #2563eb; --kpi-bg: #eff6ff;" onclick="window.location.href='{{ url_for('patients_page') }}'">
+    <div class="kpi-header">
+      <span class="kpi-badge">Patient Census</span>
+      <div class="kpi-icon-box">👥</div>
+    </div>
+    <div class="kpi-body">
+      <div class="kpi-label">Active Patient Registry</div>
+      <div class="kpi-value" id="kpi-total-patients">{{ stats.total_patients }}</div>
+      <div class="kpi-footer-meta">
+        <span style="color: var(--status-emerald); font-weight: 700;">↑ 100% Verified</span>
+        <span>Across OPD & IPD</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- KPI 2: Active Doctors -->
+  <div class="kpi-card" style="--kpi-accent: #6366f1; --kpi-bg: #eef2ff;" onclick="window.location.href='{{ url_for('doctors_page') }}'">
+    <div class="kpi-header">
+      <span class="kpi-badge">Specialists</span>
+      <div class="kpi-icon-box">🩺</div>
+    </div>
+    <div class="kpi-body">
+      <div class="kpi-label">On-Duty Medical Staff</div>
+      <div class="kpi-value" id="kpi-total-doctors">{{ stats.total_doctors }}</div>
+      <div class="kpi-footer-meta">
+        <span style="color: #2563eb; font-weight: 700;">6 Departments</span>
+        <span>86% Available</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- KPI 3: Scheduled Visits -->
+  <div class="kpi-card" style="--kpi-accent: #8b5cf6; --kpi-bg: #f5f3ff;" onclick="window.location.href='{{ url_for('appointments_page') }}'">
+    <div class="kpi-header">
+      <span class="kpi-badge">Consultations</span>
+      <div class="kpi-icon-box">📅</div>
+    </div>
+    <div class="kpi-body">
+      <div class="kpi-label">Appointments Booked</div>
+      <div class="kpi-value" id="kpi-total-appointments">{{ stats.total_appointments }}</div>
+      <div class="kpi-footer-meta">
+        <span style="color: var(--status-emerald); font-weight: 700;">Scheduled & Completed</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- KPI 4: Total Revenue -->
+  <div class="kpi-card" style="--kpi-accent: var(--status-emerald); --kpi-bg: var(--status-emerald-bg);" onclick="window.location.href='{{ url_for('billing_page') }}'">
+    <div class="kpi-header">
+      <span class="kpi-badge">Financial Revenue</span>
+      <div class="kpi-icon-box">💰</div>
+    </div>
+    <div class="kpi-body">
+      <div class="kpi-label">Total Realized Revenue</div>
+      <div class="kpi-value" id="kpi-total-revenue">₹{{ "{:,.0f}".format(stats.total_revenue) }}</div>
+      <div class="kpi-footer-meta">
+        <span style="color: var(--status-emerald); font-weight: 700;">Settled Invoices</span>
+        <span>• 0 Bad Debt</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- KPI 5: Available Bed Capacity -->
+  <div class="kpi-card" style="--kpi-accent: var(--status-amber); --kpi-bg: var(--status-amber-bg);" onclick="window.location.href='{{ url_for('rooms_page') }}'">
+    <div class="kpi-header">
+      <span class="kpi-badge">Ward Capacity</span>
+      <div class="kpi-icon-box">🛏️</div>
+    </div>
+    <div class="kpi-body">
+      <div class="kpi-label">Available Ward Beds</div>
+      <div class="kpi-value" id="kpi-available-beds">
+        {{ stats.available_beds }} 
+        <span style="font-size: 1rem; color: var(--text-tertiary); font-weight: 500;">/ {{ stats.total_beds }}</span>
+      </div>
+      <div class="kpi-footer-meta">
+        <span style="color: var(--status-amber); font-weight: 700;">{{ stats.occupied_beds }} Admitted</span>
+        <span>• ICU & General</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Two-Column Chart Row -->
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.6rem; margin-bottom: 2rem;">
+  
+  <!-- Chart 1: Revenue & Clinical Volume Trend -->
+  <div class="enterprise-card" style="margin-bottom: 0;">
+    <div class="card-topbar">
+      <div class="card-title-group">
+        <span style="font-size: 1.3rem;">📈</span>
+        <div>
+          <h3 class="card-heading">Clinical Revenue & Billing Trajectory</h3>
+          <p style="font-size: 0.78rem; color: var(--text-secondary);">Realized revenue timeline across outpatient and inpatient billing</p>
+        </div>
+      </div>
+      <span class="status-pill status-cyan">Financial Timeline</span>
+    </div>
+    <div style="position: relative; height: 260px; width: 100%;">
+      <canvas id="revenueTimelineChart"></canvas>
+    </div>
+  </div>
+
+  <!-- Chart 2: Doctor Department Distribution -->
+  <div class="enterprise-card" style="margin-bottom: 0;">
+    <div class="card-topbar">
+      <div class="card-title-group">
+        <span style="font-size: 1.3rem;">🩺</span>
+        <div>
+          <h3 class="card-heading">Specialist & Department Distribution</h3>
+          <p style="font-size: 0.78rem; color: var(--text-secondary);">Active clinical staffing allocation across medical specialties</p>
+        </div>
+      </div>
+      <span class="status-pill status-violet">Staffing Breakdown</span>
+    </div>
+    <div style="position: relative; height: 260px; width: 100%;">
+      <canvas id="specialtyDonutChart"></canvas>
+    </div>
+  </div>
+
+</div>
+
+<!-- Recent Consultations Section -->
+<div class="enterprise-card">
+  <div class="card-topbar">
+    <div class="card-title-group">
+      <span style="font-size: 1.3rem;">📑</span>
+      <div>
+        <h3 class="card-heading">Recent Clinical Consultations & Visits</h3>
+        <p style="font-size: 0.78rem; color: var(--text-secondary);">Latest patient encounters and attending specialist assignments</p>
+      </div>
+    </div>
+    <div style="display: flex; gap: 0.6rem;">
+      <button class="btn-enterprise btn-ghost-glass btn-xs" onclick="exportTableToCSV('recentApptsTable', 'recent_appointments.csv')">
+        📥 Export CSV
+      </button>
+      <a href="{{ url_for('appointments_page') }}" class="btn-enterprise btn-ghost-glass btn-xs">
+        View All Records →
+      </a>
+    </div>
+  </div>
+
+  <div class="table-viewport">
+    <table class="enterprise-table" id="recentApptsTable">
+      <thead>
+        <tr>
+          <th>Visit ID</th>
+          <th>Patient Name</th>
+          <th>Attending Specialist</th>
+          <th>Department</th>
+          <th>Date & Time</th>
+          <th>Clinical Reason</th>
+          <th>Visit Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for appt in recent_appointments %}
+        <tr>
+          <td><strong style="color: #2563eb; font-family: 'JetBrains Mono', monospace;">{{ appt.appointment_id }}</strong></td>
+          <td>
+            <a href="{{ url_for('patient_history_page', patient_id=appt.patient_id) }}" style="color: #0f172a; font-weight: 700; text-decoration: none;" title="Inspect 360° EHR Profile">
+              {{ appt.patient_name }}
+            </a>
+            <div style="font-size: 0.72rem; color: var(--text-tertiary);">PID: {{ appt.patient_id }}</div>
+          </td>
+          <td>
+            <strong style="color: #1e293b;">{{ appt.doctor_name }}</strong>
+            <div style="font-size: 0.72rem; color: var(--text-tertiary);">ID: {{ appt.doctor_id }}</div>
+          </td>
+          <td><span class="status-pill status-violet">{{ appt.specialization }}</span></td>
+          <td style="font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; color: var(--text-secondary);">{{ appt.appointment_date }}</td>
+          <td>{{ appt.reason }}</td>
+          <td>
+            {% if appt.status == 'Scheduled' %}
+              <span class="status-pill status-cyan">Scheduled</span>
+            {% elif appt.status == 'Completed' %}
+              <span class="status-pill status-emerald">Completed</span>
+            {% else %}
+              <span class="status-pill status-rose">{{ appt.status }}</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Initialize MNC Enterprise Chart.js Visualizations (Light Theme Styled)
+document.addEventListener('DOMContentLoaded', () => {
+  // Chart 1: Revenue Timeline Chart
+  const revCtx = document.getElementById('revenueTimelineChart');
+  if (revCtx) {
+    new Chart(revCtx, {
+      type: 'line',
+      data: {
+        labels: ['Day 1', 'Day 5', 'Day 10', 'Day 15', 'Day 20', 'Current Day'],
+        datasets: [{
+          label: 'Cumulative Revenue (₹)',
+          data: [1500, 3700, 5200, 7400, 8200, 9300],
+          borderColor: '#2563eb',
+          backgroundColor: 'rgba(37, 99, 235, 0.08)',
+          fill: true,
+          tension: 0.35,
+          borderWidth: 2.5,
+          pointBackgroundColor: '#2563eb',
+          pointBorderColor: '#ffffff',
+          pointBorderWidth: 2,
+          pointRadius: 4.5
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            backgroundColor: '#ffffff',
+            titleColor: '#0f172a',
+            bodyColor: '#475569',
+            borderColor: '#e2e8f0',
+            borderWidth: 1,
+            padding: 10,
+            boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+          }
+        },
+        scales: {
+          x: {
+            grid: { color: '#f1f5f9' },
+            ticks: { color: '#64748b', font: { size: 11, family: 'Plus Jakarta Sans' } }
+          },
+          y: {
+            grid: { color: '#f1f5f9' },
+            ticks: {
+              color: '#64748b',
+              font: { size: 11, family: 'Plus Jakarta Sans' },
+              callback: val => '₹' + val.toLocaleString()
+            }
+          }
+        }
+      }
+    });
+  }
+
+  // Chart 2: Doctor Specialty Distribution
+  const specCtx = document.getElementById('specialtyDonutChart');
+  if (specCtx) {
+    const specLabels = {{ stats.doctors_by_specialization | map(attribute='_id') | list | tojson }};
+    const specCounts = {{ stats.doctors_by_specialization | map(attribute='totalDoctors') | list | tojson }};
+
+    new Chart(specCtx, {
+      type: 'doughnut',
+      data: {
+        labels: specLabels,
+        datasets: [{
+          data: specCounts,
+          backgroundColor: [
+            '#2563eb',
+            '#0d9488',
+            '#059669',
+            '#d97706',
+            '#6366f1',
+            '#0284c7'
+          ],
+          borderColor: '#ffffff',
+          borderWidth: 2.5
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            position: 'right',
+            labels: {
+              color: '#334155',
+              font: { size: 12, family: 'Plus Jakarta Sans', weight: '500' },
+              padding: 14,
+              usePointStyle: true,
+              pointStyle: 'circle'
+            }
+          },
+          tooltip: {
+            backgroundColor: '#ffffff',
+            titleColor: '#0f172a',
+            bodyColor: '#475569',
+            borderColor: '#e2e8f0',
+            borderWidth: 1,
+            padding: 10
+          }
+        },
+        cutout: '68%'
+      }
+    });
+  }
+});
+</script>
+{% endblock %}

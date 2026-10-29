@@ -1,0 +1,204 @@
+{% extends "base.html" %}
+
+{% block title %}{{ data.patient.name }} - 360° Clinical Profile | MetroHealth Enterprise{% endblock %}
+
+{% block content %}
+<div class="view-header">
+  <div class="view-headline">
+    <div style="display: flex; align-items: center; gap: 0.65rem; margin-bottom: 0.2rem;">
+      <span class="status-pill status-cyan">● Longitudinal EHR</span>
+      <span style="font-size: 0.78rem; color: var(--text-tertiary); font-family: 'JetBrains Mono', monospace;">MRN: {{ data.patient.patient_id }}</span>
+    </div>
+    <h2 class="view-title">📋 Medical Record: {{ data.patient.name }}</h2>
+    <p class="view-subtitle">Unified electronic health record synthesizing consultations, diagnoses, prescriptions, and billing.</p>
+  </div>
+  <div class="view-controls">
+    <a href="{{ url_for('patients_page') }}" class="btn-enterprise btn-ghost-glass">
+      ← Return to Registry
+    </a>
+  </div>
+</div>
+
+<!-- Patient Summary Banner -->
+<div class="enterprise-card" style="border-left: 4px solid #2563eb; background: #ffffff; margin-bottom: 1.8rem;">
+  <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1.2rem;">
+    <div>
+      <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.45rem;">
+        <h3 style="font-size: 1.6rem; font-weight: 800; color: #0f172a;">{{ data.patient.name }}</h3>
+        <span class="status-pill status-cyan">{{ data.patient.patient_id }}</span>
+        <span class="status-pill status-violet">{{ data.patient.blood_group }}</span>
+      </div>
+      <div style="font-size: 0.88rem; color: var(--text-secondary);">
+        {{ data.patient.age }} Years Old • {{ data.patient.gender }} • Phone: <span style="font-family: 'JetBrains Mono', monospace; color: #0f172a;">{{ data.patient.phone }}</span> • City: {{ data.patient.address }}
+      </div>
+    </div>
+
+    <!-- Ward Admission Tag -->
+    <div>
+      {% if data.room %}
+        <span class="status-pill status-emerald" style="padding: 0.55rem 1.1rem; font-size: 0.84rem;">
+          🛏️ Inpatient: Room {{ data.room.room_number }} ({{ data.room.room_type }})
+        </span>
+      {% else %}
+        <span class="status-pill status-cyan" style="padding: 0.55rem 1.1rem; font-size: 0.84rem;">
+          Ambulatory / Outpatient Status
+        </span>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<!-- Two-Column Layout: Clinical & Financial -->
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(440px, 1fr)); gap: 1.6rem;">
+  
+  <!-- Column 1: Appointments & Diagnoses -->
+  <div>
+    <!-- Appointments -->
+    <div class="enterprise-card">
+      <div class="card-topbar">
+        <div class="card-title-group">
+          <span style="font-size: 1.25rem;">📅</span>
+          <div>
+            <h3 class="card-heading">Consultation History ({{ data.appointments|length }})</h3>
+            <p style="font-size: 0.76rem; color: var(--text-secondary);">Attending physician visits and encounters</p>
+          </div>
+        </div>
+        <span class="status-pill status-cyan">Encounters</span>
+      </div>
+      {% if data.appointments %}
+        <div style="display: flex; flex-direction: column; gap: 0.95rem;">
+          {% for a in data.appointments %}
+          <div style="padding: 1rem; background: #f8fafc; border-radius: var(--r-sm); border: var(--border-hairline);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.4rem;">
+              <strong style="color: #0f172a; font-size: 0.95rem;">{{ a.reason }}</strong>
+              <span class="status-pill {{ 'status-emerald' if a.status == 'Completed' else 'status-cyan' }}">{{ a.status }}</span>
+            </div>
+            <div style="font-size: 0.82rem; color: var(--text-secondary);">
+              Attending: <strong style="color: #1e293b;">{{ a.doctor_name }}</strong> ({{ a.specialization }}) • <span style="font-family: 'JetBrains Mono', monospace;">{{ a.appointment_date }}</span>
+            </div>
+            {% if a.notes %}
+              <div style="font-size: 0.78rem; color: var(--text-tertiary); margin-top: 0.35rem;">Clinical Notes: {{ a.notes }}</div>
+            {% endif %}
+          </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <p style="color: var(--text-tertiary); font-size: 0.85rem;">No historical appointments logged.</p>
+      {% endif %}
+    </div>
+
+    <!-- Medical Diagnoses & Clinical Records -->
+    <div class="enterprise-card">
+      <div class="card-topbar">
+        <div class="card-title-group">
+          <span style="font-size: 1.25rem;">🩺</span>
+          <div>
+            <h3 class="card-heading">Diagnoses & Treatments</h3>
+            <p style="font-size: 0.76rem; color: var(--text-secondary);">Verified clinical documentation and care plans</p>
+          </div>
+        </div>
+        <span class="status-pill status-violet">Care Plans</span>
+      </div>
+      {% if data.medical_records %}
+        <div style="display: flex; flex-direction: column; gap: 0.95rem;">
+          {% for r in data.medical_records %}
+          <div style="padding: 1rem; background: #f8fafc; border-radius: var(--r-sm); border: var(--border-hairline);">
+            <div style="font-weight: 700; color: #0f172a; margin-bottom: 0.35rem; font-size: 0.95rem;">
+              {{ r.diagnosis }}
+            </div>
+            <div style="font-size: 0.84rem; color: var(--text-secondary); margin-bottom: 0.45rem;">
+              <strong style="color: var(--status-emerald);">Treatment Protocol:</strong> {{ r.treatment }}
+            </div>
+            <div style="display: flex; justify-content: space-between; font-size: 0.76rem; color: var(--text-tertiary);">
+              <span>Physician: {{ r.doctor_name }}</span>
+              <span>Follow-up: <strong style="color: #2563eb;">{{ r.follow_up or 'Routine' }}</strong></span>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <p style="color: var(--text-tertiary); font-size: 0.85rem;">No diagnoses stored for this patient.</p>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Column 2: Prescriptions & Billing -->
+  <div>
+    <!-- Prescriptions -->
+    <div class="enterprise-card">
+      <div class="card-topbar">
+        <div class="card-title-group">
+          <span style="font-size: 1.25rem;">💊</span>
+          <div>
+            <h3 class="card-heading">Prescriptions & Medications</h3>
+            <p style="font-size: 0.76rem; color: var(--text-secondary);">Active pharmaceutical orders and dosage</p>
+          </div>
+        </div>
+        <span class="status-pill status-emerald">Pharmacy</span>
+      </div>
+      {% if data.prescriptions %}
+        <div style="display: flex; flex-direction: column; gap: 0.95rem;">
+          {% for rx in data.prescriptions %}
+          <div style="padding: 1rem; background: #f8fafc; border-radius: var(--r-sm); border: var(--border-hairline);">
+            <div style="display: flex; justify-content: space-between; font-size: 0.78rem; color: var(--text-tertiary); margin-bottom: 0.6rem;">
+              <span style="font-family: 'JetBrains Mono', monospace; color: #2563eb; font-weight: 700;">Rx: {{ rx.prescription_id }}</span>
+              <span>Prescriber: {{ rx.doctor_name }}</span>
+            </div>
+            <div style="margin-bottom: 0.6rem; display: flex; flex-direction: column; gap: 0.35rem;">
+              {% for med in rx.medicines %}
+              <div style="font-size: 0.84rem; color: #0f172a; display: flex; justify-content: space-between; background: #ffffff; border: 1px solid #e2e8f0; padding: 0.45rem 0.75rem; border-radius: var(--r-xs);">
+                <span>• <strong>{{ med.name }}</strong> ({{ med.dosage }})</span>
+                <span style="color: var(--status-emerald); font-weight: 600; font-size: 0.78rem;">{{ med.duration }}</span>
+              </div>
+              {% endfor %}
+            </div>
+            {% if rx.instructions %}
+              <div style="font-size: 0.78rem; color: #92400e; font-style: italic; background: #fffbeb; padding: 0.4rem 0.65rem; border-radius: var(--r-xs);">
+                Note: {{ rx.instructions }}
+              </div>
+            {% endif %}
+          </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <p style="color: var(--text-tertiary); font-size: 0.85rem;">No prescriptions issued.</p>
+      {% endif %}
+    </div>
+
+    <!-- Billing Records -->
+    <div class="enterprise-card">
+      <div class="card-topbar">
+        <div class="card-title-group">
+          <span style="font-size: 1.25rem;">💳</span>
+          <div>
+            <h3 class="card-heading">Financial Invoices & Receipts</h3>
+            <p style="font-size: 0.76rem; color: var(--text-secondary);">Historical statements and receipts</p>
+          </div>
+        </div>
+        <span class="status-pill status-amber">Statements</span>
+      </div>
+      {% if data.bills %}
+        <div style="display: flex; flex-direction: column; gap: 0.95rem;">
+          {% for b in data.bills %}
+          <div style="padding: 1rem; background: #f8fafc; border-radius: var(--r-sm); border: var(--border-hairline);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.4rem;">
+              <span style="font-weight: 700; color: #0f172a; font-family: 'JetBrains Mono', monospace;">Invoice {{ b.bill_id }}</span>
+              <span class="status-pill {{ 'status-emerald' if b.payment_status == 'Paid' else 'status-amber' }}">
+                {{ b.payment_status }}
+              </span>
+            </div>
+            <div style="display: flex; justify-content: space-between; font-size: 0.85rem; color: var(--text-secondary);">
+              <span>Date: {{ b.bill_date }}</span>
+              <span style="font-size: 1.15rem; font-weight: 800; color: var(--status-emerald); font-family: 'Outfit', sans-serif;">₹{{ "{:,.0f}".format(b.amount) }}</span>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <p style="color: var(--text-tertiary); font-size: 0.85rem;">No billing history found.</p>
+      {% endif %}
+    </div>
+  </div>
+
+</div>
+{% endblock %}

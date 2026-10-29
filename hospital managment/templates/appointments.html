@@ -1,0 +1,178 @@
+{% extends "base.html" %}
+
+{% block title %}Appointments & Clinical Scheduling | MetroHealth Enterprise{% endblock %}
+
+{% block content %}
+<div class="view-header">
+  <div class="view-headline">
+    <div style="display: flex; align-items: center; gap: 0.65rem; margin-bottom: 0.2rem;">
+      <span class="status-pill status-cyan">● Clinical Scheduling</span>
+      <span style="font-size: 0.78rem; color: var(--text-tertiary);">Physician Consultations & Follow-ups</span>
+    </div>
+    <h2 class="view-title">📅 Appointments & Clinical Scheduling</h2>
+    <p class="view-subtitle">Patient consultation scheduling, physician appointments, and visit tracking.</p>
+  </div>
+  <div class="view-controls">
+    <button class="btn-enterprise btn-ghost-glass" onclick="exportTableToCSV('appointmentsRegistryTable', 'hospital_appointments_schedule.csv')">
+      📥 Export CSV
+    </button>
+    <button class="btn-enterprise btn-primary-glow" onclick="openModal('bookAppointmentModal')" id="btn-book-appointment">
+      ➕ Book Appointment
+    </button>
+  </div>
+</div>
+
+<!-- Status Filters -->
+<div style="display: flex; gap: 0.6rem; margin-bottom: 1.6rem;">
+  <a href="{{ url_for('appointments_page') }}" class="btn-enterprise btn-xs {% if current_status == 'All' %}btn-primary-glow{% else %}btn-ghost-glass{% endif %}">
+    All Appointments
+  </a>
+  <a href="{{ url_for('appointments_page', status='Scheduled') }}" class="btn-enterprise btn-xs {% if current_status == 'Scheduled' %}btn-primary-glow{% else %}btn-ghost-glass{% endif %}">
+    Scheduled
+  </a>
+  <a href="{{ url_for('appointments_page', status='Completed') }}" class="btn-enterprise btn-xs {% if current_status == 'Completed' %}btn-primary-glow{% else %}btn-ghost-glass{% endif %}">
+    Completed
+  </a>
+  <a href="{{ url_for('appointments_page', status='Cancelled') }}" class="btn-enterprise btn-xs {% if current_status == 'Cancelled' %}btn-primary-glow{% else %}btn-ghost-glass{% endif %}">
+    Cancelled
+  </a>
+</div>
+
+<!-- Appointments Table -->
+<div class="enterprise-card">
+  <div class="card-topbar">
+    <div class="card-title-group">
+      <span style="font-size: 1.25rem;">📑</span>
+      <div>
+        <h3 class="card-heading">Clinical Visit Ledger ({{ appointments|length }})</h3>
+        <p style="font-size: 0.78rem; color: var(--text-secondary);">Verified patient appointments and attending specialist assignments</p>
+      </div>
+    </div>
+    <span class="status-pill status-cyan">Active Encounters</span>
+  </div>
+
+  <div class="table-viewport">
+    <table class="enterprise-table" id="appointmentsRegistryTable">
+      <thead>
+        <tr>
+          <th>Visit ID</th>
+          <th>Patient Name</th>
+          <th>Attending Specialist</th>
+          <th>Department</th>
+          <th>Scheduled Time</th>
+          <th>Clinical Reason</th>
+          <th>Status</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for a in appointments %}
+        <tr>
+          <td><strong style="color: #2563eb; font-family: 'JetBrains Mono', monospace;">{{ a.appointment_id }}</strong></td>
+          <td>
+            <a href="{{ url_for('patient_history_page', patient_id=a.patient_id) }}" style="color: #0f172a; font-weight: 700; text-decoration: none;">
+              {{ a.patient_name }}
+            </a>
+            <div style="font-size: 0.72rem; color: var(--text-tertiary);">PID: {{ a.patient_id }} • {{ a.patient_phone or 'No phone' }}</div>
+          </td>
+          <td>
+            <strong style="color: #1e293b;">{{ a.doctor_name }}</strong>
+            <div style="font-size: 0.72rem; color: var(--text-tertiary);">Fee: ₹{{ "{:,.0f}".format(a.consultation_fee or 0) }}</div>
+          </td>
+          <td><span class="status-pill status-violet">{{ a.specialization or 'General' }}</span></td>
+          <td style="font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; color: var(--text-secondary);">{{ a.appointment_date }}</td>
+          <td>{{ a.reason }}</td>
+          <td>
+            {% if a.status == 'Scheduled' %}
+              <span class="status-pill status-cyan">Scheduled</span>
+            {% elif a.status == 'Completed' %}
+              <span class="status-pill status-emerald">Completed</span>
+            {% else %}
+              <span class="status-pill status-rose">{{ a.status }}</span>
+            {% endif %}
+          </td>
+          <td>
+            <div style="display: flex; gap: 0.4rem;">
+              {% if a.status == 'Scheduled' %}
+                <button class="btn-enterprise btn-emerald-glow btn-xs" onclick="updateAppointmentStatus('{{ a.appointment_id }}', 'Completed')" title="Mark Completed">
+                  ✓ Done
+                </button>
+                <button class="btn-enterprise btn-danger-glass btn-xs" onclick="updateAppointmentStatus('{{ a.appointment_id }}', 'Cancelled')" title="Cancel">
+                  ✕ Cancel
+                </button>
+              {% else %}
+                <span style="font-size: 0.76rem; color: var(--text-tertiary); font-weight: 600;">Finalized</span>
+              {% endif %}
+            </div>
+          </td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="8" style="text-align: center; padding: 3rem; color: var(--text-tertiary);">
+            No appointments found under status: <strong>{{ current_status }}</strong>.
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Book Appointment Modal -->
+<div class="modal-overlay" id="bookAppointmentModal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h3 class="modal-title">📅 Schedule Clinical Visit</h3>
+      <button class="modal-close" onclick="closeModal('bookAppointmentModal')">&times;</button>
+    </div>
+    <form onsubmit="handleAppointmentBook(event)">
+      <div class="form-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+        <div class="form-group">
+          <label>Appointment ID (Optional):</label>
+          <input type="text" name="appointment_id" class="form-control" placeholder="Auto-generated if empty">
+        </div>
+        <div class="form-group">
+          <label>Select Registered Patient *:</label>
+          <select name="patient_id" class="form-control" required>
+            <option value="">-- Choose Patient --</option>
+            {% for p in patients %}
+            <option value="{{ p.patient_id }}">{{ p.patient_id }} - {{ p.name }} ({{ p.blood_group }})</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+
+      <div class="form-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+        <div class="form-group">
+          <label>Assign Specialist *:</label>
+          <select name="doctor_id" class="form-control" required>
+            <option value="">-- Choose Available Specialist --</option>
+            {% for d in doctors %}
+            <option value="{{ d.doctor_id }}">{{ d.name }} ({{ d.specialization }} - ₹{{ d.consultation_fee }})</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Visit Date & Time *:</label>
+          <input type="datetime-local" name="appointment_date" class="form-control" required>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Primary Clinical Reason *:</label>
+        <input type="text" name="reason" class="form-control" placeholder="e.g. Routine Consultation / Follow-up / Symptom Review" required>
+      </div>
+
+      <div class="form-group">
+        <label>Preliminary Clinical Notes:</label>
+        <textarea name="notes" class="form-control" rows="2" placeholder="Patient symptoms or referral details..."></textarea>
+      </div>
+
+      <div style="display: flex; justify-content: flex-end; gap: 0.75rem; margin-top: 1.5rem;">
+        <button type="button" class="btn-enterprise btn-ghost-glass" onclick="closeModal('bookAppointmentModal')">Cancel</button>
+        <button type="submit" class="btn-enterprise btn-primary-glow">Confirm & Schedule Visit</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

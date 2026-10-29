@@ -1,0 +1,232 @@
+{% extends "base.html" %}
+
+{% block title %}Revenue Analytics & Patient Invoicing | MetroHealth Enterprise{% endblock %}
+
+{% block content %}
+<div class="view-header">
+  <div class="view-headline">
+    <div style="display: flex; align-items: center; gap: 0.65rem; margin-bottom: 0.2rem;">
+      <span class="status-pill status-emerald">● Accounts Receivable</span>
+      <span style="font-size: 0.78rem; color: var(--text-tertiary);">Fiscal Reconciliations & Inpatient Ledger</span>
+    </div>
+    <h2 class="view-title">💳 Revenue Analytics & Invoicing</h2>
+    <p class="view-subtitle">Itemized patient billing, hospital revenue analytics, and settlement processing.</p>
+  </div>
+  <div class="view-controls">
+    <button class="btn-enterprise btn-ghost-glass" onclick="exportTableToCSV('billingInvoicesTable', 'hospital_billing_invoices.csv')">
+      📥 Export CSV
+    </button>
+    <button class="btn-enterprise btn-primary-glow" onclick="openModal('newBillModal')" id="btn-generate-bill">
+      ➕ Generate Invoice
+    </button>
+  </div>
+</div>
+
+<!-- Revenue Highlight Card -->
+<div class="enterprise-card" style="border: 1px solid #a7f3d0; background: #ecfdf5; margin-bottom: 1.8rem;">
+  <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1.5rem;">
+    <div>
+      <div style="font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--status-emerald); font-weight: 800; margin-bottom: 0.35rem;">
+        Total Realized Hospital Revenue (Paid Invoices)
+      </div>
+      <div style="font-size: 2.6rem; font-weight: 800; color: #065f46; font-family: 'Outfit', sans-serif;">
+        ₹{{ "{:,.0f}".format(total_revenue) }}
+      </div>
+      <div style="font-size: 0.82rem; color: #047857; margin-top: 0.35rem; font-weight: 500;">
+        Reconciled across all paid patient accounts • 0 Bad Debt • 100% Audit Verified
+      </div>
+    </div>
+
+    <div>
+      <button class="btn-enterprise btn-emerald-glow" onclick="openModal('newBillModal')">
+        ➕ Issue New Invoice
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Status Filters -->
+<div style="display: flex; gap: 0.6rem; margin-bottom: 1.6rem;">
+  <a href="{{ url_for('billing_page') }}" class="btn-enterprise btn-xs {% if current_status == 'All' %}btn-primary-glow{% else %}btn-ghost-glass{% endif %}">
+    All Invoices
+  </a>
+  <a href="{{ url_for('billing_page', status='Paid') }}" class="btn-enterprise btn-xs {% if current_status == 'Paid' %}btn-primary-glow{% else %}btn-ghost-glass{% endif %}">
+    Paid Invoices
+  </a>
+  <a href="{{ url_for('billing_page', status='Pending') }}" class="btn-enterprise btn-xs {% if current_status == 'Pending' %}btn-primary-glow{% else %}btn-ghost-glass{% endif %}">
+    Pending / Unsettled
+  </a>
+</div>
+
+<!-- Billing Data Table -->
+<div class="enterprise-card">
+  <div class="card-topbar">
+    <div class="card-title-group">
+      <span style="font-size: 1.25rem;">📄</span>
+      <div>
+        <h3 class="card-heading">Itemized Invoices Registry ({{ bills|length }})</h3>
+        <p style="font-size: 0.78rem; color: var(--text-secondary);">Audited billing statements and payment channel verification</p>
+      </div>
+    </div>
+    <span class="status-pill status-emerald">Invoicing Registry</span>
+  </div>
+
+  <div class="table-viewport">
+    <table class="enterprise-table" id="billingInvoicesTable">
+      <thead>
+        <tr>
+          <th>Invoice ID</th>
+          <th>Billed Patient</th>
+          <th>Statement Date</th>
+          <th>Itemized Services Breakdown</th>
+          <th>Total Sum</th>
+          <th>Payment State</th>
+          <th>Channel</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for b in bills %}
+        <tr>
+          <td><strong style="color: #2563eb; font-family: 'JetBrains Mono', monospace;">{{ b.bill_id }}</strong></td>
+          <td>
+            <a href="{{ url_for('patient_history_page', patient_id=b.patient_id) }}" style="color: #0f172a; font-weight: 700; text-decoration: none;">
+              {{ b.patient_name }}
+            </a>
+            <div style="font-size: 0.72rem; color: var(--text-tertiary);">PID: {{ b.patient_id }}</div>
+          </td>
+          <td style="font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; color: var(--text-secondary);">{{ b.bill_date }}</td>
+          <td>
+            {% if b['items'] %}
+              <div style="font-size: 0.8rem; color: var(--text-secondary);">
+                {% for item in b['items'] %}
+                  <div>• {{ item.description }}: <strong style="color: #0f172a;">₹{{ item.amount }}</strong></div>
+                {% endfor %}
+              </div>
+            {% else %}
+              <span style="font-size: 0.8rem; color: var(--text-tertiary);">Clinical Consultation</span>
+            {% endif %}
+          </td>
+          <td>
+            <strong style="font-size: 1.05rem; color: var(--status-emerald); font-family: 'Outfit', sans-serif;">₹{{ "{:,.0f}".format(b.amount) }}</strong>
+          </td>
+          <td>
+            {% if b.payment_status == 'Paid' %}
+              <span class="status-pill status-emerald">Paid</span>
+            {% else %}
+              <span class="status-pill status-amber">Pending</span>
+            {% endif %}
+          </td>
+          <td style="font-size: 0.82rem; color: var(--text-secondary);">{{ b.payment_method or 'Pending' }}</td>
+          <td>
+            {% if b.payment_status != 'Paid' %}
+              <button class="btn-enterprise btn-emerald-glow btn-xs" onclick="openPayBillModal('{{ b.bill_id }}', {{ b.amount }})">
+                💳 Settle Bill
+              </button>
+            {% else %}
+              <span style="font-size: 0.78rem; color: var(--status-emerald); font-weight: 700;">✓ Settled</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="8" style="text-align: center; padding: 3rem; color: var(--text-tertiary);">
+            No invoice records found under status: <strong>{{ current_status }}</strong>.
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Generate Bill Modal -->
+<div class="modal-overlay" id="newBillModal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h3 class="modal-title">➕ Generate Patient Clinical Invoice</h3>
+      <button class="modal-close" onclick="closeModal('newBillModal')">&times;</button>
+    </div>
+    <form onsubmit="handleCreateBill(event)">
+      <div class="form-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+        <div class="form-group">
+          <label>Invoice ID (Optional):</label>
+          <input type="text" name="bill_id" class="form-control" placeholder="Auto-generated if empty">
+        </div>
+        <div class="form-group">
+          <label>Billed Patient *:</label>
+          <select name="patient_id" class="form-control" required>
+            <option value="">-- Choose Patient --</option>
+            {% for p in patients %}
+            <option value="{{ p.patient_id }}">{{ p.patient_id }} - {{ p.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+
+      <div class="form-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+        <div class="form-group">
+          <label>Invoice Total Amount (₹) *:</label>
+          <input type="number" name="amount" class="form-control" placeholder="1500" required>
+        </div>
+        <div class="form-group">
+          <label>Initial Payment State *:</label>
+          <select name="payment_status" class="form-control" required>
+            <option value="Paid">Paid</option>
+            <option value="Pending">Pending</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Payment Channel:</label>
+        <select name="payment_method" class="form-control">
+          <option value="UPI">UPI (Google Pay / PhonePe / Paytm)</option>
+          <option value="Credit Card">Credit / Debit Card</option>
+          <option value="Cash">Cash at Billing Counter</option>
+          <option value="Net Banking">Net Banking</option>
+          <option value="Pending">Pending / Unpaid</option>
+        </select>
+      </div>
+
+      <div style="display: flex; justify-content: flex-end; gap: 0.75rem; margin-top: 1.5rem;">
+        <button type="button" class="btn-enterprise btn-ghost-glass" onclick="closeModal('newBillModal')">Cancel</button>
+        <button type="submit" class="btn-enterprise btn-primary-glow">Generate & Issue Invoice</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Pay Bill Modal -->
+<div class="modal-overlay" id="payBillModal">
+  <div class="modal-content" style="max-width: 440px;">
+    <div class="modal-header">
+      <h3 class="modal-title">💳 Process Invoice Settlement</h3>
+      <button class="modal-close" onclick="closeModal('payBillModal')">&times;</button>
+    </div>
+    <form onsubmit="handlePayBillSubmit(event)">
+      <input type="hidden" id="payBillId">
+
+      <div style="text-align: center; margin-bottom: 1.5rem; background: #f8fafc; padding: 1.2rem; border-radius: var(--r-sm); border: 1px solid #e2e8f0;">
+        <div style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 0.25rem;">Total Payable:</div>
+        <div id="payBillAmount" style="font-size: 2.2rem; font-weight: 800; color: var(--status-emerald); font-family: 'Outfit', sans-serif;">₹0</div>
+      </div>
+
+      <div class="form-group">
+        <label>Payment Mode *:</label>
+        <select id="paymentMethodSelect" class="form-control" required>
+          <option value="UPI">UPI Instant (Google Pay / PhonePe)</option>
+          <option value="Credit Card">Credit / Debit Card</option>
+          <option value="Cash">Cash at Reception</option>
+          <option value="Net Banking">Net Banking</option>
+        </select>
+      </div>
+
+      <div style="display: flex; justify-content: flex-end; gap: 0.75rem; margin-top: 1.5rem;">
+        <button type="button" class="btn-enterprise btn-ghost-glass" onclick="closeModal('payBillModal')">Cancel</button>
+        <button type="submit" class="btn-enterprise btn-emerald-glow">Confirm Settlement</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

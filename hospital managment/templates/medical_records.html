@@ -1,0 +1,198 @@
+{% extends "base.html" %}
+
+{% block title %}EHR Diagnoses & Prescriptions | MetroHealth Enterprise{% endblock %}
+
+{% block content %}
+<div class="view-header">
+  <div class="view-headline">
+    <div style="display: flex; align-items: center; gap: 0.65rem; margin-bottom: 0.2rem;">
+      <span class="status-pill status-cyan">● EHR Operations</span>
+      <span style="font-size: 0.78rem; color: var(--text-tertiary);">Clinical Documentation & Medication Regimens</span>
+    </div>
+    <h2 class="view-title">📋 Electronic Health Records (EHR)</h2>
+    <p class="view-subtitle">Clinical diagnoses, treatment plans, and verified patient prescription protocols.</p>
+  </div>
+  <div class="view-controls">
+    <button class="btn-enterprise btn-primary-glow" onclick="openModal('newRecordModal')">
+      ➕ Add Clinical Diagnosis
+    </button>
+  </div>
+</div>
+
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(440px, 1fr)); gap: 1.6rem;">
+  
+  <!-- Column 1: Diagnoses & Treatment History -->
+  <div class="enterprise-card" style="margin-bottom: 0;">
+    <div class="card-topbar">
+      <div class="card-title-group">
+        <span style="font-size: 1.25rem;">🩺</span>
+        <div>
+          <h3 class="card-heading">Diagnoses & Clinical Notes ({{ records|length }})</h3>
+          <p style="font-size: 0.78rem; color: var(--text-secondary);">Physician consultations, clinical findings, and care pathways</p>
+        </div>
+      </div>
+      <span class="status-pill status-violet">Clinical Notes</span>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 1.15rem;">
+      {% for r in records %}
+      <div style="padding: 1.15rem; background: #f8fafc; border-radius: var(--r-sm); border: var(--border-hairline);">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.5rem;">
+          <div>
+            <h4 style="font-size: 1.05rem; color: #0f172a; font-weight: 700;">{{ r.diagnosis }}</h4>
+            <div style="font-size: 0.76rem; color: #2563eb; font-family: 'JetBrains Mono', monospace;">Record: {{ r.record_id }}</div>
+          </div>
+          <span style="font-size: 0.76rem; color: var(--text-tertiary); font-family: 'JetBrains Mono', monospace;">{{ r.record_date }}</span>
+        </div>
+
+        <div style="font-size: 0.84rem; color: var(--text-secondary); margin-bottom: 0.75rem;">
+          Patient: <a href="{{ url_for('patient_history_page', patient_id=r.patient_id) }}" style="color: #0f172a; font-weight: 700; text-decoration: none;">{{ r.patient_name }} ({{ r.patient_id }})</a> • 
+          Specialist: <strong style="color: #1e293b;">{{ r.doctor_name }}</strong>
+        </div>
+
+        <div style="font-size: 0.84rem; background: #ffffff; padding: 0.75rem 0.95rem; border-radius: var(--r-xs); margin-bottom: 0.65rem; border: 1px solid #e2e8f0; border-left: 3px solid var(--status-emerald);">
+          <strong style="color: var(--status-emerald);">Treatment Plan:</strong> {{ r.treatment }}
+        </div>
+
+        <div style="display: flex; justify-content: space-between; font-size: 0.78rem; color: var(--text-tertiary);">
+          <span>Allergies: <strong style="color: var(--status-rose);">{{ r.allergies or 'None Documented' }}</strong></span>
+          <span>Next Follow-up: <strong style="color: #2563eb;">{{ r.follow_up or 'Routine' }}</strong></span>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- Column 2: Prescriptions & Medicine Regimens -->
+  <div class="enterprise-card" style="margin-bottom: 0;">
+    <div class="card-topbar">
+      <div class="card-title-group">
+        <span style="font-size: 1.25rem;">💊</span>
+        <div>
+          <h3 class="card-heading">Prescriptions & Medication Protocols ({{ prescriptions|length }})</h3>
+          <p style="font-size: 0.78rem; color: var(--text-secondary);">Active pharmacy orders, dosage schedules, and clinical guidance</p>
+        </div>
+      </div>
+      <span class="status-pill status-emerald">Active Pharmacy</span>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 1.15rem;">
+      {% for rx in prescriptions %}
+      <div style="padding: 1.15rem; background: #f8fafc; border-radius: var(--r-sm); border: var(--border-hairline);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+          <strong style="color: #2563eb; font-family: 'JetBrains Mono', monospace;">Prescription {{ rx.prescription_id }}</strong>
+          <span style="font-size: 0.76rem; color: var(--text-tertiary); font-family: 'JetBrains Mono', monospace;">{{ rx.date }}</span>
+        </div>
+
+        <div style="font-size: 0.84rem; color: var(--text-secondary); margin-bottom: 0.85rem;">
+          Patient: <strong style="color: #0f172a;">{{ rx.patient_name }}</strong> • Prescriber: <strong style="color: #1e293b;">{{ rx.doctor_name }}</strong>
+        </div>
+
+        <!-- Medicines list -->
+        <div style="display: flex; flex-direction: column; gap: 0.45rem; margin-bottom: 0.75rem;">
+          {% for med in rx.medicines %}
+          <div style="display: flex; justify-content: space-between; font-size: 0.84rem; background: #ffffff; padding: 0.55rem 0.85rem; border-radius: var(--r-xs); border: 1px solid #e2e8f0; align-items: center;">
+            <div>
+              <span style="color: #0f172a; font-weight: 600;">💊 {{ med.name }}</span>
+              <span style="font-size: 0.76rem; color: var(--text-secondary); margin-left: 0.45rem;">({{ med.dosage }})</span>
+            </div>
+            <span style="font-size: 0.76rem; color: var(--status-emerald); font-weight: 600;">{{ med.duration }}</span>
+          </div>
+          {% endfor %}
+        </div>
+
+        {% if rx.instructions %}
+          <div style="font-size: 0.78rem; color: #92400e; font-style: italic; background: #fffbeb; border: 1px solid #fef3c7; padding: 0.45rem 0.75rem; border-radius: var(--r-xs);">
+            Special Instructions: {{ rx.instructions }}
+          </div>
+        {% endif %}
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+</div>
+
+<!-- New Medical Record Modal -->
+<div class="modal-overlay" id="newRecordModal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h3 class="modal-title">➕ Record Clinical Diagnosis & Treatment</h3>
+      <button class="modal-close" onclick="closeModal('newRecordModal')">&times;</button>
+    </div>
+    <form onsubmit="handleNewRecord(event)">
+      <div class="form-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+        <div class="form-group">
+          <label>Select Registered Patient *:</label>
+          <select name="patient_id" class="form-control" required>
+            <option value="">-- Choose Patient --</option>
+            {% for p in patients %}
+            <option value="{{ p.patient_id }}">{{ p.patient_id }} - {{ p.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Attending Specialist *:</label>
+          <select name="doctor_id" class="form-control" required>
+            <option value="">-- Choose Specialist --</option>
+            {% for d in doctors %}
+            <option value="{{ d.doctor_id }}">{{ d.name }} ({{ d.specialization }})</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Primary Diagnosis *:</label>
+        <input type="text" name="diagnosis" class="form-control" placeholder="e.g. Essential Hypertension (Stage 2)" required>
+      </div>
+
+      <div class="form-group">
+        <label>Clinical Treatment Protocol *:</label>
+        <textarea name="treatment" class="form-control" rows="2" placeholder="Dietary restrictions, oral antihypertensives, follow-up screening..." required></textarea>
+      </div>
+
+      <div class="form-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+        <div class="form-group">
+          <label>Next Follow-up Date:</label>
+          <input type="date" name="follow_up" class="form-control">
+        </div>
+        <div class="form-group">
+          <label>Documented Allergies:</label>
+          <input type="text" name="allergies" class="form-control" placeholder="e.g. Penicillin, Sulfa, None">
+        </div>
+      </div>
+
+      <div style="display: flex; justify-content: flex-end; gap: 0.75rem; margin-top: 1.5rem;">
+        <button type="button" class="btn-enterprise btn-ghost-glass" onclick="closeModal('newRecordModal')">Cancel</button>
+        <button type="submit" class="btn-enterprise btn-primary-glow">Save Clinical Record</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+async function handleNewRecord(event) {
+  event.preventDefault();
+  const form = event.target;
+  const formData = new FormData(form);
+  const data = Object.fromEntries(formData.entries());
+
+  try {
+    const res = await fetch('/api/medical-records', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    });
+    const result = await res.json();
+    if (result.success) {
+      showToast(`Medical record ${result.record_id} saved successfully!`, 'success');
+      closeModal('newRecordModal');
+      setTimeout(() => window.location.reload(), 600);
+    }
+  } catch (err) {
+    showToast('Error saving record', 'error');
+  }
+}
+</script>
+{% endblock %}

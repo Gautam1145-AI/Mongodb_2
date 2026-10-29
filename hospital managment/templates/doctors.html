@@ -1,0 +1,159 @@
+{% extends "base.html" %}
+
+{% block title %}Medical Specialists & Clinical Faculty | MetroHealth Enterprise{% endblock %}
+
+{% block content %}
+<div class="view-header">
+  <div class="view-headline">
+    <div style="display: flex; align-items: center; gap: 0.65rem; margin-bottom: 0.2rem;">
+      <span class="status-pill status-cyan">● Clinical Faculty</span>
+      <span style="font-size: 0.78rem; color: var(--text-tertiary);">Departmental Specialists & Availability</span>
+    </div>
+    <h2 class="view-title">🩺 Medical Specialists & Departments</h2>
+    <p class="view-subtitle">Hospital physician directory, departmental allocation, and clinical availability.</p>
+  </div>
+  <div class="view-controls">
+    <button class="btn-enterprise btn-primary-glow" onclick="openModal('newDoctorModal')" id="btn-add-doctor">
+      ➕ Onboard Doctor
+    </button>
+  </div>
+</div>
+
+<!-- Specialization Quick Filters -->
+<div style="display: flex; gap: 0.65rem; margin-bottom: 1.6rem; overflow-x: auto; padding-bottom: 0.5rem; flex-wrap: wrap;">
+  <a href="{{ url_for('doctors_page') }}" class="btn-enterprise btn-xs {% if current_spec == 'All' %}btn-primary-glow{% else %}btn-ghost-glass{% endif %}">
+    All Departments
+  </a>
+  {% for s in specs %}
+  <a href="{{ url_for('doctors_page', specialization=s._id) }}" class="btn-enterprise btn-xs {% if current_spec == s._id %}btn-primary-glow{% else %}btn-ghost-glass{% endif %}">
+    {{ s._id }} <span style="opacity: 0.85; font-weight: 700; margin-left: 0.35rem;">({{ s.totalDoctors }})</span>
+  </a>
+  {% endfor %}
+</div>
+
+<!-- Doctors Cards Grid -->
+<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(330px, 1fr)); gap: 1.5rem;">
+  {% for doc in doctors %}
+  <div class="enterprise-card" style="margin-bottom: 0;">
+    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem;">
+      <div style="display: flex; gap: 0.85rem; align-items: center;">
+        <div style="width: 48px; height: 48px; border-radius: var(--r-sm); background: #eff6ff; display: flex; align-items: center; justify-content: center; font-size: 1.4rem; border: 1px solid #bfdbfe;">
+          🩺
+        </div>
+        <div>
+          <h3 style="font-size: 1.15rem; font-weight: 700; color: #0f172a;">{{ doc.name }}</h3>
+          <div style="font-size: 0.76rem; color: #2563eb; font-weight: 700; font-family: 'JetBrains Mono', monospace;">{{ doc.doctor_id }} • {{ doc.department or doc.specialization }}</div>
+        </div>
+      </div>
+      <span class="status-pill {{ 'status-emerald' if doc.available else 'status-rose' }}">
+        {{ 'On-Duty' if doc.available else 'Off-Duty' }}
+      </span>
+    </div>
+
+    <div style="font-size: 0.84rem; color: var(--text-secondary); display: flex; flex-direction: column; gap: 0.45rem; margin-bottom: 1.25rem; background: #f8fafc; padding: 0.95rem; border-radius: var(--r-sm); border: var(--border-hairline);">
+      <div style="display: flex; justify-content: space-between;">
+        <span>Specialization:</span>
+        <strong style="color: #0f172a;">{{ doc.specialization }}</strong>
+      </div>
+      <div style="display: flex; justify-content: space-between;">
+        <span>Experience:</span>
+        <span style="color: #0f172a;">{{ doc.experience }} Years Clinical</span>
+      </div>
+      <div style="display: flex; justify-content: space-between;">
+        <span>Consultation Fee:</span>
+        <strong style="color: var(--status-emerald); font-family: 'Outfit', sans-serif;">₹{{ "{:,.0f}".format(doc.consultation_fee) }}</strong>
+      </div>
+      <div style="display: flex; justify-content: space-between;">
+        <span>Contact:</span>
+        <span style="font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; color: var(--text-secondary);">{{ doc.phone or 'N/A' }}</span>
+      </div>
+    </div>
+
+    <div style="display: flex; justify-content: space-between; align-items: center; gap: 0.5rem;">
+      <button class="btn-enterprise btn-ghost-glass btn-xs" onclick="toggleDoctorAvailability('{{ doc.doctor_id }}', {{ 'true' if doc.available else 'false' }})">
+        {{ 'Mark Off-Duty' if doc.available else 'Mark On-Duty' }}
+      </button>
+      <a href="{{ url_for('appointments_page') }}" class="btn-enterprise btn-primary-glow btn-xs">
+        Book Visit
+      </a>
+    </div>
+  </div>
+  {% else %}
+  <div style="grid-column: 1 / -1; text-align: center; padding: 4rem; color: var(--text-tertiary);">
+    No specialists found under department: <strong>{{ current_spec }}</strong>.
+  </div>
+  {% endfor %}
+</div>
+
+<!-- Add Doctor Modal -->
+<div class="modal-overlay" id="newDoctorModal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h3 class="modal-title">➕ Onboard Medical Specialist</h3>
+      <button class="modal-close" onclick="closeModal('newDoctorModal')">&times;</button>
+    </div>
+    <form onsubmit="handleDoctorRegister(event)">
+      <div class="form-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+        <div class="form-group">
+          <label>Doctor ID (Optional):</label>
+          <input type="text" name="doctor_id" class="form-control" placeholder="Auto-generated if empty">
+        </div>
+        <div class="form-group">
+          <label>Specialist Full Name *:</label>
+          <input type="text" name="name" class="form-control" placeholder="e.g. Dr. Amit Verma" required>
+        </div>
+      </div>
+
+      <div class="form-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+        <div class="form-group">
+          <label>Department Specialty *:</label>
+          <select name="specialization" class="form-control" required>
+            <option value="Cardiology">Cardiology</option>
+            <option value="Neurology">Neurology</option>
+            <option value="Orthopedics">Orthopedics</option>
+            <option value="Pediatrics">Pediatrics</option>
+            <option value="General Medicine">General Medicine</option>
+            <option value="Dermatology">Dermatology</option>
+            <option value="Oncology">Oncology</option>
+            <option value="Radiology">Radiology</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Years of Experience *:</label>
+          <input type="number" name="experience" class="form-control" placeholder="10" min="0" max="60" required>
+        </div>
+      </div>
+
+      <div class="form-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+        <div class="form-group">
+          <label>Consultation Fee (₹) *:</label>
+          <input type="number" name="consultation_fee" class="form-control" placeholder="800" required>
+        </div>
+        <div class="form-group">
+          <label>Duty Availability *:</label>
+          <select name="available" class="form-control">
+            <option value="true">On-Duty / Available</option>
+            <option value="false">Off-Duty</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+        <div class="form-group">
+          <label>Official Email:</label>
+          <input type="email" name="email" class="form-control" placeholder="doctor@metrohealth.org">
+        </div>
+        <div class="form-group">
+          <label>Direct Contact Phone:</label>
+          <input type="text" name="phone" class="form-control" placeholder="9811223344">
+        </div>
+      </div>
+
+      <div style="display: flex; justify-content: flex-end; gap: 0.75rem; margin-top: 1.5rem;">
+        <button type="button" class="btn-enterprise btn-ghost-glass" onclick="closeModal('newDoctorModal')">Cancel</button>
+        <button type="submit" class="btn-enterprise btn-primary-glow">Onboard Specialist</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
